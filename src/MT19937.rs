@@ -8,11 +8,6 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-use std::char::UNICODE_VERSION;
-use std::cmp::{max, Ordering};
-use std::default::Default;
-use std::fmt::{self, Debug};
-use std::hash::{Hash, Hasher};
 use std::num::Wrapping;
 
 const N: usize = 624;
@@ -24,7 +19,6 @@ const LOWER_MASK: Wrapping<u32> = Wrapping(0x7fffffff);
 
 /// The 32-bit flavor of the Mersenne Twister pseudorandom number
 /// generator.
-// #[derive(Copy)]
 pub struct MT19937 {
     idx: usize,
     state: [Wrapping<u32>; N],
@@ -36,14 +30,7 @@ pub const UNINITIALIZED: MT19937 = MT19937 {
 };
 
 impl MT19937 {
-    /// Create a new Mersenne Twister random number generator using
-    /// the default fixed seed.
-    #[inline]
-    pub fn new_unseeded() -> MT19937 {
-        let mut ret = UNINITIALIZED;
-        ret.reseed(5489u32);
-        ret
-    }
+    /// Create a new Mersenne Twister random number generator using a provided seed
     #[inline]
     pub fn from_seed(seed: u32) -> MT19937 {
         let mut ret = UNINITIALIZED;
@@ -54,46 +41,23 @@ impl MT19937 {
     #[inline]
     fn fill_next_state(&mut self) {
         for i in 0..N - M {
-            let x =
-                (self.state[i] & UPPER_MASK) | (self.state[i + 1] & LOWER_MASK);
-            self.state[i] =
-                self.state[i + M] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
+            let x = (self.state[i] & UPPER_MASK) | (self.state[i + 1] & LOWER_MASK);
+            self.state[i] = self.state[i + M] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
         }
         for i in N - M..N - 1 {
-            let x =
-                (self.state[i] & UPPER_MASK) | (self.state[i + 1] & LOWER_MASK);
-            self.state[i] =
-                self.state[i + M - N] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
+            let x = (self.state[i] & UPPER_MASK) | (self.state[i + 1] & LOWER_MASK);
+            self.state[i] = self.state[i + M - N] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
         }
         let x = (self.state[N - 1] & UPPER_MASK) | (self.state[0] & LOWER_MASK);
-        self.state[N - 1] =
-            self.state[M - 1] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
+        self.state[N - 1] = self.state[M - 1] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
         self.idx = 0;
     }
-
-    /// Recover the internal state of a Mersenne Twister instance
-    /// from 624 consecutive outputs of the algorithm.
-    ///
-    /// The returned `MT19937` is guaranteed to identically reproduce
-    /// subsequent outputs of the RNG that was sampled.
-    ///
-    /// Panics if the length of the slice is not exactly 624.
-    // pub fn recover(samples: &[u32]) -> MT19937 {
-    //     assert!(samples.len() == N);
-    //     let mut mt = UNINITIALIZED;
-    //     for (in_, out) in Iterator::zip(samples.iter(), mt.state.iter_mut()) {
-    //         *out = Wrapping(untemper(*in_));
-    //     }
-    //     mt.idx = N;
-    //     mt
-    // }
 
     pub fn reseed(&mut self, seed: u32) {
         self.idx = N;
         self.state[0] = Wrapping(seed);
         for i in 1..N {
-            self.state[i] = Wrapping(1812433253)
-                * (self.state[i - 1] ^ (self.state[i - 1] >> 30))
+            self.state[i] = Wrapping(1812433253) * (self.state[i - 1] ^ (self.state[i - 1] >> 30))
                 + Wrapping(i as u32);
         }
     }
@@ -115,15 +79,13 @@ impl MT19937 {
     pub fn bounded_rand_int(&mut self, max: u32) -> u32 {
         // "LibSVM / LibLinear Original way" - make a 31bit positive
         // random number and use modulo to make it fit in the range
-        // return (self.next_u32() % max) as usize;
+        // self.next_u32() % max
 
         // "Better way": tweaked Lemire post-processor
         // from http://www.pcg-random.org/posts/bounded-rands.html
         let mut x = self.next_u32();
-        // println!("x: {}", x);
         let mut m = x as u64 * max as u64;
         let mut l = m as u32;
-        // println!("m: {} l: {}", m, l);
         if l < max {
             let mut t = max.wrapping_neg();
             if t >= max {
@@ -138,7 +100,6 @@ impl MT19937 {
                 l = m as u32;
             }
         }
-        // println!("{}\n", (m >> 32) as u32);
         return (m >> 32) as u32;
     }
 }
@@ -174,12 +135,12 @@ fn temper(mut x: u32) -> u32 {
 //     x
 // }
 
-// impl Default for MT19937 {
-//     #[inline]
-//     fn default() -> MT19937 {
-//         MT19937::new_unseeded()
-//     }
-// }
+impl Default for MT19937 {
+    #[inline]
+    fn default() -> MT19937 {
+        MT19937::from_seed(5489)
+    }
+}
 
 // #[cfg(test)]
 // mod test {
@@ -195,7 +156,6 @@ fn temper(mut x: u32) -> u32 {
 //         }
 //     }
 // }
-
 
 // #[test]
 // fn test_32bit_seeded() {
