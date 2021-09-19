@@ -1,9 +1,10 @@
 use crate::MT19937::MT19937;
+use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::{fs, io, io::BufRead};
 
 #[derive(Clone)]
-pub struct FeatureNode {
+struct FeatureNode {
     index: usize,
     value: f64,
 }
@@ -72,6 +73,28 @@ pub enum SolverType {
     ONECLASS_SVM = 21,   // one-class support vector machine (dual)
 }
 
+impl TryFrom<usize> for SolverType {
+    type Error = &'static str;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::L2R_LR),
+            1 => Ok(Self::L2R_L2LOSS_SVC_DUAL),
+            2 => Ok(Self::L2R_L2LOSS_SVC),
+            3 => Ok(Self::L2R_L1LOSS_SVC_DUAL),
+            4 => Ok(Self::MCSVM_CS),
+            5 => Ok(Self::L1R_L2LOSS_SVC),
+            6 => Ok(Self::L1R_LR),
+            7 => Ok(Self::L2R_LR_DUAL),
+            11 => Ok(Self::L2R_L2LOSS_SVR),
+            12 => Ok(Self::L2R_L2LOSS_SVR_DUAL),
+            13 => Ok(Self::L2R_L1LOSS_SVR_DUAL),
+            21 => Ok(Self::ONECLASS_SVM),
+            _ => Err("Solver type does not exist"),
+        }
+    }
+}
+
 /// nr_weight, weight_label, and weight are used to change the penalty
 /// for some classes (If the weight for a class is not changed, it is
 /// set to 1). This is useful for training classifier using unbalanced
@@ -128,7 +151,6 @@ impl SparseOperator {
 
     // #[inline]
     pub fn dot(s: &Vec<f64>, x: &Vec<f64>) -> f64 {
-        // x.iter().map(|a| s[a.index - 1] * a.value).sum()
         s.iter().zip(x.iter()).map(|(a, b)| a * b).sum()
     }
 
@@ -158,6 +180,7 @@ fn solve_l2r_l1l2_svc(
     let mut C;
     let mut d;
     let mut G;
+    let mut alpha_old;
 
     let mut QD: Vec<f64> = vec![0.0; l];
     let mut index: Vec<usize> = (0..l).collect();
@@ -190,8 +213,6 @@ fn solve_l2r_l1l2_svc(
         PGmin_new = f64::INFINITY;
 
         for i in 0..active_size {
-            // let j = i + 100 % (active_size - i);
-            // let j = i + rng.gen_range(0..active_size - i);
             let j = i + rng.bounded_rand_int((active_size - i) as u32) as usize;
             index.swap(i, j)
         }
@@ -227,7 +248,7 @@ fn solve_l2r_l1l2_svc(
             PGmin_new = PGmin_new.min(PG);
 
             if PG.abs() > 1.0e-12 {
-                let alpha_old = alpha[i];
+                alpha_old = alpha[i];
                 alpha[i] = (alpha[i] - G / QD[i]).max(0.0).min(C);
                 d = (alpha[i] - alpha_old) * yi as f64;
                 SparseOperator::axpy(d, xi, w);
@@ -240,10 +261,7 @@ fn solve_l2r_l1l2_svc(
         //     print!(".")
         // }
 
-        if PGmax_new - PGmin_new <= eps
-        // && PGmax_new.abs() <= eps
-        // && PGmin_new.abs() <= eps
-        {
+        if PGmax_new - PGmin_new <= eps && PGmax_new.abs() <= eps && PGmin_new.abs() <= eps {
             if active_size == l {
                 break;
             } else {
@@ -275,7 +293,7 @@ fn solve_l2r_l1l2_svc(
     iter
 }
 
-pub fn train(prob: &Problem, param: Parameter) -> Model {
+pub fn train(prob: &Problem, param: Parameter) -> (Model, usize) {
     let mut model = Model::new(param);
     let l = prob.l;
     let n = prob.n;
@@ -307,39 +325,21 @@ pub fn train(prob: &Problem, param: Parameter) -> Model {
         bias: prob.bias,
     };
 
-    // train_one(
-    //     &sub_prob,
-    //     &model.param,
-    //     &mut model.w,
-    //     model.param.C,
-    //     model.param.C,
-    // );
-    solve_l2r_l1l2_svc(
-        &sub_prob,
-        &model.param,
-        &mut model.w,
-        model.param.C,
-        model.param.C,
-        model.param.max_iter,
-    );
-    model
+    let mut n_iter = 0;
+    if model.param.solver_type == SolverType::L2R_L1LOSS_SVC_DUAL {
+        n_iter = solve_l2r_l1l2_svc(
+            &sub_prob,
+            &model.param,
+            &mut model.w,
+            model.param.C,
+            model.param.C,
+            model.param.max_iter,
+        );
+    } else {
+        panic!("Unsupported solver type")
+    }
+    (model, n_iter)
 }
-
-// fn train_one(
-//     prob: &SubProblem,
-//     param: &Parameter,
-//     w: &mut Vec<f64>,
-//     Cp: f64,
-//     Cn: f64,
-// ) {
-//     // we have the same penalty for both direction
-//     if param.solver_type == SolverType::L2R_L1LOSS_SVC_DUAL {
-//         let iter = solve_l2r_l1l2_svc(prob, param, w, Cp, Cn, param.max_iter);
-//         if iter >= 300 {
-//             print!("\nWARNING: reaching max number of iterations\nUsing -s 2 may be faster (also see FAQ)\n\n")
-//         };
-//     }
-// }
 
 // group_classes reorganise training data into consecutive labels
 fn group_classes(prob: &Problem) -> (usize, [i8; 2], [usize; 2], [usize; 2], Vec<usize>) {
@@ -360,59 +360,59 @@ fn group_classes(prob: &Problem) -> (usize, [i8; 2], [usize; 2], [usize; 2], Vec
     (2, [1, -1], start, count, neg)
 }
 
-// fn read_file(filename: &str) -> Problem {
-//     let file = fs::File::open(filename).unwrap();
-//     let lines = io::BufReader::new(file).lines();
-//     let mut y = Vec::new();
-//     let mut x = Vec::new();
-//     let mut n = 0usize;
-//     for line in lines {
-//         if let Ok(l) = line {
-//             let mut row = Vec::new();
-//             let mut elements = l.split_whitespace();
-//             if let Some(elem) = elements.next() {
-//                 y.push(elem.parse::<f64>().unwrap())
-//             }
-//             let mut index = 1;
-//             for elem in elements {
-//                 let node = FeatureNode::parse_str(elem);
-//                 while node.index > index {
-//                     row.push(FeatureNode { index, value: 0.0 });
-//                     index += 1;
-//                 }
-//                 index += 1;
-//             }
-//             let last_index = row.last().unwrap().index;
-//             if last_index > n {
-//                 n = last_index
-//             }
-//             x.push(row)
-//         }
-//     }
-//     let mut new_x = Vec::new();
-//     for row in x {
-//         let mut new_row = vec![1.0; n + 1];
-//         for feature_node in row {
-//             new_row[feature_node.index - 1] = feature_node.value
-//         }
-//         new_x.push(new_row)
-//     }
-//     Problem {
-//         l: new_x.len(),
-//         n: n + 1,
-//         y,
-//         x: new_x,
-//         bias: 1.0,
-//     }
-// }
+fn read_file(filename: &str) -> Problem {
+    let file = fs::File::open(filename).unwrap();
+    let lines = io::BufReader::new(file).lines();
+    let mut y = Vec::new();
+    let mut x = Vec::new();
+    let mut n = 0usize;
+    for line in lines {
+        if let Ok(l) = line {
+            let mut row = Vec::new();
+            let mut elements = l.split_whitespace();
+            if let Some(elem) = elements.next() {
+                y.push(elem.parse::<f64>().unwrap())
+            }
+            let mut index = 1;
+            for elem in elements {
+                let node = FeatureNode::parse_str(elem);
+                while node.index > index {
+                    row.push(FeatureNode { index, value: 0.0 });
+                    index += 1;
+                }
+                index += 1;
+            }
+            let last_index = row.last().unwrap().index;
+            if last_index > n {
+                n = last_index
+            }
+            x.push(row)
+        }
+    }
+    let mut new_x = Vec::new();
+    for row in x {
+        let mut new_row = vec![1.0; n + 1];
+        for feature_node in row {
+            new_row[feature_node.index - 1] = feature_node.value
+        }
+        new_x.push(new_row)
+    }
+    Problem {
+        l: new_x.len(),
+        n: n + 1,
+        y,
+        x: new_x,
+        bias: 1.0,
+    }
+}
 
 #[cfg(test)]
 mod test {
     use super::*;
     #[test]
     fn group() {
-        let prob = read_file("breast_cancer");
-        let model = train(
+        let prob = read_file("heart_scale");
+        let (model, n_iter) = train(
             &prob,
             Parameter {
                 solver_type: SolverType::L2R_L1LOSS_SVC_DUAL,
@@ -430,10 +430,5 @@ mod test {
             },
         );
         println!("{:?}", model.w);
-        // should give
-        // .........*....*
-        // optimization finished, #iter = 136
-        // Objective value = -96.45492423290239
-        // nSV = 108
     }
 }
