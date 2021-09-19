@@ -25,3 +25,6 @@ features = ["extension-module"]
 
 [build-dependencies]
 pyo3-build-config = "0.14.5"
+
+[profile.release]
+debug = true
