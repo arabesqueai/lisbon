@@ -1,5 +1,3 @@
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-
 use crate::MT19937::MT19937;
 use std::fmt::Debug;
 use std::{fs, io, io::BufRead};
@@ -35,30 +33,24 @@ impl FeatureNode {
 
 #[derive(Debug)]
 pub struct Problem {
-    l: usize,                 // number of training data
-    n: usize, // number of features (including the bias feature if bias >= 0)
-    y: Vec<f64>, // array of target values (OPT bool for classification and f64 for regression)
-    x: Vec<Vec<FeatureNode>>, // array of sparsely represented traning vectors
-    bias: f64,   // < 0 if no bias term
+    l: usize,         // number of training data
+    n: usize,         // number of features (including the bias feature if bias >= 0)
+    y: Vec<f64>,      // array of target values (OPT bool for classification and f64 for regression)
+    x: Vec<Vec<f64>>, // array of sparsely represented traning vectors
+    bias: f64,        // < 0 if no bias term
 }
 
 #[derive(Debug)]
 pub struct SubProblem<'a> {
-    l: usize,                     // number of training data
-    n: usize, // number of features (including the bias feature if bias >= 0)
+    l: usize,             // number of training data
+    n: usize,             // number of features (including the bias feature if bias >= 0)
     y: Vec<f64>, // array of target values (OPT bool for classification and f64 for regression)
-    x: Vec<&'a Vec<FeatureNode>>, // array of sparsely represented traning vectors
-    bias: f64,                    // < 0 if no bias term
+    x: Vec<&'a Vec<f64>>, // array of sparsely represented traning vectors
+    bias: f64,   // < 0 if no bias term
 }
 
 impl Problem {
-    pub fn new(
-        l: usize,
-        n: usize,
-        y: Vec<f64>,
-        x: Vec<Vec<FeatureNode>>,
-        bias: f64,
-    ) -> Self {
+    pub fn new(l: usize, n: usize, y: Vec<f64>, x: Vec<Vec<f64>>, bias: f64) -> Self {
         Self { l, n, y, x, bias }
     }
 }
@@ -68,7 +60,7 @@ impl Problem {
 pub enum SolverType {
     L2R_LR,              // L2-regularized logistic regression (primal)
     L2R_L2LOSS_SVC_DUAL, // L2-regularized L2-loss support vector classification (dual)
-    L2R_L2LOSS_SVC, // L2-regularized L2-loss support vector classification (primal)
+    L2R_L2LOSS_SVC,      // L2-regularized L2-loss support vector classification (primal)
     L2R_L1LOSS_SVC_DUAL, // L2-regularized L1-loss support vector classification (dual)
     MCSVM_CS,            // support vector classification by Crammer and Singer
     L1R_L2LOSS_SVC,      // L1-regularized L2-loss support vector classification
@@ -90,12 +82,12 @@ pub struct Parameter {
     // these are for training only
     pub eps: f64,          // stopping tolerance
     pub C: f64,            // cost of constraints violation
-    pub nr_weight: i32, // number of elements in the array weight_label and weight
+    pub nr_weight: i32,    // number of elements in the array weight_label and weight
     pub weight_label: i32, // Each weight[i] corresponds to weight_label[i], meaning that
     // the penalty of class weight_label[i] is scaled by a factor of weight[i].
     pub weight: f64,
-    pub p: f64,  // sensitiveness of loss of support vector regression
-    pub nu: f64, // approximates the fraction of data as outliers
+    pub p: f64,        // sensitiveness of loss of support vector regression
+    pub nu: f64,       // approximates the fraction of data as outliers
     pub init_sol: f64, // the initial weight vectors
     pub regularize_bias: i32,
     pub max_iter: usize,
@@ -104,7 +96,7 @@ pub struct Parameter {
 
 pub struct Model {
     pub param: Parameter,
-    pub nr_class: usize, // number of classes; nr_class = 2 for regression.
+    pub nr_class: usize,   // number of classes; nr_class = 2 for regression.
     pub nr_feature: usize, // number of features
     pub w: Vec<f64>, // feature weights; its size is nr_feature*nr_class but is nr_feature if nr_class = 2
     pub label: [i8; 2], // label of each class
@@ -126,23 +118,24 @@ impl Model {
     }
 }
 
-struct SparseOperator;
+pub struct SparseOperator;
 
 impl SparseOperator {
-    #[inline]
-    fn nrm2_sq(x: &Vec<FeatureNode>) -> f64 {
-        x.par_iter().map(|a| a.value * a.value).sum()
+    // #[inline]
+    pub fn nrm2_sq(x: &Vec<f64>) -> f64 {
+        x.iter().map(|a| a * a).sum()
     }
 
-    #[inline]
-    fn dot(s: &Vec<f64>, x: &Vec<FeatureNode>) -> f64 {
-        x.par_iter().map(|a| s[a.index - 1] * a.value).sum()
+    // #[inline]
+    pub fn dot(s: &Vec<f64>, x: &Vec<f64>) -> f64 {
+        // x.iter().map(|a| s[a.index - 1] * a.value).sum()
+        s.iter().zip(x.iter()).map(|(a, b)| a * b).sum()
     }
 
-    #[inline]
-    fn axpy(a: f64, x: &Vec<FeatureNode>, y: &mut Vec<f64>) {
-        for i in x {
-            y[i.index - 1] += a * i.value
+    // #[inline]
+    pub fn axpy(a: f64, x: &Vec<f64>, y: &mut Vec<f64>) {
+        for (i, j) in y.iter_mut().zip(x.iter()) {
+            *i += a * j
         }
     }
 }
@@ -301,8 +294,7 @@ pub fn train(prob: &Problem, param: Parameter) -> Model {
     model.label = label;
 
     // construct subproblem
-    let x: Vec<&Vec<FeatureNode>> =
-        perm.iter().map(|&ind| &prob.x[ind]).collect();
+    let x: Vec<&Vec<f64>> = perm.iter().map(|&ind| &prob.x[ind]).collect();
 
     model.w = vec![0.0; w_size];
     let mut y = vec![-1.0; start[1]];
@@ -350,9 +342,7 @@ pub fn train(prob: &Problem, param: Parameter) -> Model {
 // }
 
 // group_classes reorganise training data into consecutive labels
-fn group_classes(
-    prob: &Problem,
-) -> (usize, [i8; 2], [usize; 2], [usize; 2], Vec<usize>) {
+fn group_classes(prob: &Problem) -> (usize, [i8; 2], [usize; 2], [usize; 2], Vec<usize>) {
     let no_neg = prob.y.iter().filter(|&&a| a <= 0.0).count();
     let start = [0, no_neg];
     let count = [no_neg, prob.l - no_neg];
@@ -370,41 +360,51 @@ fn group_classes(
     (2, [1, -1], start, count, neg)
 }
 
-fn read_file(filename: &str) -> Problem {
-    let file = fs::File::open(filename).unwrap();
-    let lines = io::BufReader::new(file).lines();
-    let mut y = Vec::new();
-    let mut x = Vec::new();
-    let mut n = 0usize;
-    for line in lines {
-        if let Ok(l) = line {
-            let mut row = Vec::new();
-            let mut elements = l.split_whitespace();
-            if let Some(elem) = elements.next() {
-                y.push(elem.parse::<f64>().unwrap())
-            }
-            for elem in elements {
-                row.push(FeatureNode::parse_str(elem))
-            }
-            let last_index = row.last().unwrap().index;
-            if last_index > n {
-                n = last_index
-            }
-            row.push(FeatureNode {
-                index: usize::MAX,
-                value: 1.0,
-            });
-            x.push(row)
-        }
-    }
-    Problem {
-        l: x.len(),
-        n: n + 1,
-        y,
-        x,
-        bias: 1.0,
-    }
-}
+// fn read_file(filename: &str) -> Problem {
+//     let file = fs::File::open(filename).unwrap();
+//     let lines = io::BufReader::new(file).lines();
+//     let mut y = Vec::new();
+//     let mut x = Vec::new();
+//     let mut n = 0usize;
+//     for line in lines {
+//         if let Ok(l) = line {
+//             let mut row = Vec::new();
+//             let mut elements = l.split_whitespace();
+//             if let Some(elem) = elements.next() {
+//                 y.push(elem.parse::<f64>().unwrap())
+//             }
+//             let mut index = 1;
+//             for elem in elements {
+//                 let node = FeatureNode::parse_str(elem);
+//                 while node.index > index {
+//                     row.push(FeatureNode { index, value: 0.0 });
+//                     index += 1;
+//                 }
+//                 index += 1;
+//             }
+//             let last_index = row.last().unwrap().index;
+//             if last_index > n {
+//                 n = last_index
+//             }
+//             x.push(row)
+//         }
+//     }
+//     let mut new_x = Vec::new();
+//     for row in x {
+//         let mut new_row = vec![1.0; n + 1];
+//         for feature_node in row {
+//             new_row[feature_node.index - 1] = feature_node.value
+//         }
+//         new_x.push(new_row)
+//     }
+//     Problem {
+//         l: new_x.len(),
+//         n: n + 1,
+//         y,
+//         x: new_x,
+//         bias: 1.0,
+//     }
+// }
 
 #[cfg(test)]
 mod test {

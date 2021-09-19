@@ -67,17 +67,20 @@ fn lisbon(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-fn dense_to_sparse(arr: &PyReadonlyArray2<f64>) -> Vec<Vec<FeatureNode>> {
+fn dense_to_sparse(arr: &PyReadonlyArray2<f64>) -> Vec<Vec<f64>> {
     arr.as_array()
         .axis_iter(Axis(0))
         // .rows()
         // .into_iter()
         .map(|row| {
-            row.iter()
-                .enumerate()
-                .map(|(ind, &val)| FeatureNode::new(ind + 1, val))
-                .chain([FeatureNode::new(row.len() + 1, 1.0)])
-                .collect::<Vec<FeatureNode>>()
+            let mut ret = row.to_vec();
+            ret.push(1.0);
+            ret
+            // row.iter()
+            //     .enumerate()
+            //     .map(|(ind, &val)| FeatureNode::new(ind + 1, val))
+            //     .chain([FeatureNode::new(row.len() + 1, 1.0)])
+            //     .collect::<Vec<FeatureNode>>()
         })
         .collect()
 }
