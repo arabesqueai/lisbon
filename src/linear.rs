@@ -1,5 +1,3 @@
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-
 use crate::MT19937::MT19937;
 use std::fmt::Debug;
 use std::{fs, io, io::BufRead};
@@ -131,12 +129,12 @@ struct SparseOperator;
 impl SparseOperator {
     #[inline]
     fn nrm2_sq(x: &Vec<FeatureNode>) -> f64 {
-        x.par_iter().map(|a| a.value * a.value).sum()
+        x.iter().map(|a| a.value * a.value).sum()
     }
 
     #[inline]
     fn dot(s: &Vec<f64>, x: &Vec<FeatureNode>) -> f64 {
-        x.par_iter().map(|a| s[a.index - 1] * a.value).sum()
+        x.iter().map(|a| s[a.index - 1] * a.value).sum()
     }
 
     #[inline]
