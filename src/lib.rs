@@ -1,22 +1,23 @@
+#[allow(non_snake_case)]
 mod MT19937;
 mod linear;
 use std::convert::TryInto;
 
 use ndarray::Array2;
-use ndarray::Axis;
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::prelude::*;
 
 use crate::linear::{Parameter, Problem};
 
 #[pyfunction]
-fn set_verbosity_wrap(verbose: i64) -> PyResult<()> {
+fn set_verbosity_wrap(_verbose: i64) -> PyResult<()> {
     Ok(())
 }
 
 /// A Python module implemented in Rust. The name of this function must match
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
+#[allow(non_snake_case)]
 #[pymodule]
 fn lisbon(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(set_verbosity_wrap, m)?)?;
@@ -59,7 +60,6 @@ fn lisbon(_py: Python, m: &PyModule) -> PyResult<()> {
 }
 
 fn dense_to_sparse<'a>(arr: &'a PyReadonlyArray2<f64>) -> Vec<&'a [f64]> {
-    let l = arr.shape()[0];
     let n = arr.shape()[1];
     arr.as_slice().unwrap().chunks(n).collect()
 }

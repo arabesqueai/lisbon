@@ -60,6 +60,7 @@ impl TryFrom<usize> for SolverType {
 /// for some classes (If the weight for a class is not changed, it is
 /// set to 1). This is useful for training classifier using unbalanced
 /// input data or with asymmetric misclassification cost.
+#[allow(non_snake_case)]
 pub struct Parameter {
     pub solver_type: SolverType,
 
@@ -125,6 +126,7 @@ impl SparseOperator {
     }
 }
 
+#[allow(non_snake_case)]
 fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter, w: &mut Vec<f64>) -> usize {
     let l = prob.l;
     // let w_size = prob.n;
