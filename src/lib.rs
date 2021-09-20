@@ -37,21 +37,14 @@ fn lisbon(_py: Python, m: &PyModule) -> PyResult<()> {
         _sample_weight: PyReadonlyArray1<'py, f64>,
     ) -> PyResult<(&'py PyArray2<f64>, &'py PyArray1<usize>)> {
         let sparse = dense_to_sparse(&x);
-        let target = y.to_vec().unwrap();
+        let target = y.as_slice().unwrap();
         let l = x.shape()[0];
-        let n = x.shape()[1] + 1;
+        let n = x.shape()[1];
         let prob = Problem::new(l, n, target, sparse, bias);
         let param = Parameter {
             solver_type: solver_type.try_into().unwrap(),
             eps,
             C,
-            nr_weight: 0,
-            weight_label: 0,
-            weight: 0.0,
-            p: 0.0,
-            nu: 0.0,
-            init_sol: 0.0,
-            regularize_bias: 0,
             max_iter,
             random_seed,
         };
@@ -65,13 +58,8 @@ fn lisbon(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-fn dense_to_sparse(arr: &PyReadonlyArray2<f64>) -> Vec<Vec<f64>> {
-    arr.as_array()
-        .axis_iter(Axis(0))
-        .map(|row| {
-            let mut ret = row.to_vec();
-            ret.push(1.0);
-            ret
-        })
-        .collect()
+fn dense_to_sparse<'a>(arr: &'a PyReadonlyArray2<f64>) -> Vec<&'a [f64]> {
+    let l = arr.shape()[0];
+    let n = arr.shape()[1];
+    arr.as_slice().unwrap().chunks(n).collect()
 }
