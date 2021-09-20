@@ -107,17 +107,17 @@ impl Model {
 pub struct SparseOperator;
 
 impl SparseOperator {
-    // #[inline]
+    #[inline]
     pub fn nrm2_sq(x: &[f64]) -> f64 {
         x.iter().map(|a| a * a).sum()
     }
 
-    // #[inline]
+    #[inline]
     pub fn dot(s: &Vec<f64>, x: &[f64]) -> f64 {
         s.iter().zip(x.iter()).map(|(a, b)| a * b).sum()
     }
 
-    // #[inline]
+    #[inline]
     pub fn axpy(a: f64, x: &[f64], y: &mut Vec<f64>) {
         for (i, j) in y.iter_mut().zip(x.iter()) {
             *i += a * j
