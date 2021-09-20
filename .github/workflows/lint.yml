@@ -1,0 +1,35 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Lint
+
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches:
+    - '**'
+    paths:
+    - '**.py'
+  pull_request:
+    branches:
+    - '**'
+    paths: 
+    - '**.py'
+  workflow_dispatch:
+ 
+jobs:
+  # This workflow contains a single job called "lint"
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+          architecture: x64
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install flake8
+        run: pip install flake8
+      - name: Run flake8
+        run: |-
+          set -eu&&flake8 --ignore=E501,W503&&echo "Your code looks ok."
