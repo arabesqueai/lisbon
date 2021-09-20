@@ -1,57 +1,18 @@
 use crate::MT19937::MT19937;
 use std::convert::TryFrom;
 use std::fmt::Debug;
-use std::{fs, io, io::BufRead};
-
-#[derive(Clone)]
-struct FeatureNode {
-    index: usize,
-    value: f64,
-}
-
-impl Debug for FeatureNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("({}, {})", self.index, self.value))
-    }
-}
-
-impl FeatureNode {
-    pub fn new(index: usize, value: f64) -> Self {
-        Self { index, value }
-    }
-
-    fn parse_str(input: &str) -> Self {
-        if let Some(ind_val) = input.split_once(":") {
-            return Self {
-                index: ind_val.0.parse::<usize>().unwrap(),
-                value: ind_val.1.parse::<f64>().unwrap(),
-            };
-        } else {
-            panic!("Malformed input {}", input)
-        }
-    }
-}
 
 #[derive(Debug)]
-pub struct Problem {
-    l: usize,         // number of training data
-    n: usize,         // number of features (including the bias feature if bias >= 0)
-    y: Vec<f64>,      // array of target values (OPT bool for classification and f64 for regression)
-    x: Vec<Vec<f64>>, // array of sparsely represented traning vectors
-    bias: f64,        // < 0 if no bias term
+pub struct Problem<'a> {
+    l: usize,          // number of training data
+    n: usize,          // number of features (including the bias feature if bias >= 0)
+    y: &'a [f64], // array of target values (OPT bool for classification and f64 for regression)
+    x: Vec<&'a [f64]>, // array of sparsely represented traning vectors
+    bias: f64,    // < 0 if no bias term
 }
 
-#[derive(Debug)]
-pub struct SubProblem<'a> {
-    l: usize,             // number of training data
-    n: usize,             // number of features (including the bias feature if bias >= 0)
-    y: Vec<f64>, // array of target values (OPT bool for classification and f64 for regression)
-    x: Vec<&'a Vec<f64>>, // array of sparsely represented traning vectors
-    bias: f64,   // < 0 if no bias term
-}
-
-impl Problem {
-    pub fn new(l: usize, n: usize, y: Vec<f64>, x: Vec<Vec<f64>>, bias: f64) -> Self {
+impl<'a> Problem<'a> {
+    pub fn new(l: usize, n: usize, y: &'a [f64], x: Vec<&'a [f64]>, bias: f64) -> Self {
         Self { l, n, y, x, bias }
     }
 }
@@ -103,16 +64,16 @@ pub struct Parameter {
     pub solver_type: SolverType,
 
     // these are for training only
-    pub eps: f64,          // stopping tolerance
-    pub C: f64,            // cost of constraints violation
-    pub nr_weight: i32,    // number of elements in the array weight_label and weight
-    pub weight_label: i32, // Each weight[i] corresponds to weight_label[i], meaning that
-    // the penalty of class weight_label[i] is scaled by a factor of weight[i].
-    pub weight: f64,
-    pub p: f64,        // sensitiveness of loss of support vector regression
-    pub nu: f64,       // approximates the fraction of data as outliers
-    pub init_sol: f64, // the initial weight vectors
-    pub regularize_bias: i32,
+    pub eps: f64, // stopping tolerance
+    pub C: f64,   // cost of constraints violation
+    // pub nr_weight: i32,    // number of elements in the array weight_label and weight
+    // pub weight_label: i32, // Each weight[i] corresponds to weight_label[i], meaning that
+    // // the penalty of class weight_label[i] is scaled by a factor of weight[i].
+    // pub weight: f64,
+    // pub p: f64,        // sensitiveness of loss of support vector regression
+    // pub nu: f64,       // approximates the fraction of data as outliers
+    // pub init_sol: f64, // the initial weight vectors
+    // pub regularize_bias: i32,
     pub max_iter: usize,
     pub random_seed: u32,
 }
@@ -125,6 +86,7 @@ pub struct Model {
     pub label: [i8; 2], // label of each class
     pub bias: f64,
     pub rho: f64, // one-class SVM only
+    pub intercept: f64,
 }
 
 impl Model {
@@ -137,6 +99,7 @@ impl Model {
             label: [0, 0],
             bias: 1.0,
             rho: 0.0,
+            intercept: 0.0,
         }
     }
 }
@@ -145,31 +108,24 @@ pub struct SparseOperator;
 
 impl SparseOperator {
     // #[inline]
-    pub fn nrm2_sq(x: &Vec<f64>) -> f64 {
+    pub fn nrm2_sq(x: &[f64]) -> f64 {
         x.iter().map(|a| a * a).sum()
     }
 
     // #[inline]
-    pub fn dot(s: &Vec<f64>, x: &Vec<f64>) -> f64 {
+    pub fn dot(s: &Vec<f64>, x: &[f64]) -> f64 {
         s.iter().zip(x.iter()).map(|(a, b)| a * b).sum()
     }
 
     // #[inline]
-    pub fn axpy(a: f64, x: &Vec<f64>, y: &mut Vec<f64>) {
+    pub fn axpy(a: f64, x: &[f64], y: &mut Vec<f64>) {
         for (i, j) in y.iter_mut().zip(x.iter()) {
             *i += a * j
         }
     }
 }
 
-fn solve_l2r_l1l2_svc(
-    prob: &SubProblem,
-    param: &Parameter,
-    w: &mut Vec<f64>,
-    Cp: f64,
-    Cn: f64,
-    max_iter: usize,
-) -> usize {
+fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter, w: &mut Vec<f64>) -> usize {
     let l = prob.l;
     // let w_size = prob.n;
     let eps = param.eps;
@@ -181,6 +137,7 @@ fn solve_l2r_l1l2_svc(
     let mut d;
     let mut G;
     let mut alpha_old;
+    let mut intercept = 0.0;
 
     let mut QD: Vec<f64> = vec![0.0; l];
     let mut index: Vec<usize> = (0..l).collect();
@@ -197,12 +154,14 @@ fn solve_l2r_l1l2_svc(
 
     // default solver_type: L2R_L2LOSS_SVC_DUAL
     // let diag = [0.0, 0.0, 0.0];
-    let upper_bound = [Cn, 0.0, Cp];
+    let upper_bound = [param.C, 0.0, param.C];
 
     for i in 0..l {
-        let xi = &prob.x[i];
-        QD[i] = SparseOperator::nrm2_sq(xi);
+        let xi = prob.x[i];
+        QD[i] = SparseOperator::nrm2_sq(xi) + prob.bias * prob.bias;
         SparseOperator::axpy(prob.y[i] as f64 * alpha[i], xi, w);
+        intercept += prob.y[i] as f64 * alpha[i] * prob.bias;
+
         // moved index sequential assigning to above
     }
 
@@ -222,7 +181,7 @@ fn solve_l2r_l1l2_svc(
             let yi = prob.y[i];
             let xi = &prob.x[i];
 
-            G = yi as f64 * SparseOperator::dot(w, xi) - 1f64;
+            G = yi as f64 * (SparseOperator::dot(w, xi) + intercept * prob.bias) - 1f64;
             C = upper_bound[(prob.y[i] as i8 + 1) as usize];
             PG = 0.0;
             if alpha[i] == 0.0 {
@@ -252,6 +211,7 @@ fn solve_l2r_l1l2_svc(
                 alpha[i] = (alpha[i] - G / QD[i]).max(0.0).min(C);
                 d = (alpha[i] - alpha_old) * yi as f64;
                 SparseOperator::axpy(d, xi, w);
+                intercept += d * prob.bias;
             }
 
             s += 1;
@@ -289,7 +249,7 @@ fn solve_l2r_l1l2_svc(
 
     // println!("Objective value = {}", v / 2.0);
     // println!("nSV = {}", nSV);
-
+    w.push(intercept);
     iter
 }
 
@@ -312,29 +272,22 @@ pub fn train(prob: &Problem, param: Parameter) -> (Model, usize) {
     model.label = label;
 
     // construct subproblem
-    let x: Vec<&Vec<f64>> = perm.iter().map(|&ind| &prob.x[ind]).collect();
+    let x = perm.iter().map(|&ind| prob.x[ind]).collect();
 
     model.w = vec![0.0; w_size];
     let mut y = vec![-1.0; start[1]];
     y.append(&mut vec![1.0; count[1]]);
-    let sub_prob = SubProblem {
+    let sub_prob = Problem {
         l,
         n,
-        y,
+        y: &y[..],
         x,
         bias: prob.bias,
     };
 
-    let mut n_iter = 0;
+    let n_iter;
     if model.param.solver_type == SolverType::L2R_L1LOSS_SVC_DUAL {
-        n_iter = solve_l2r_l1l2_svc(
-            &sub_prob,
-            &model.param,
-            &mut model.w,
-            model.param.C,
-            model.param.C,
-            model.param.max_iter,
-        );
+        n_iter = solve_l2r_l1l2_svc(&sub_prob, &model.param, &mut model.w);
     } else {
         panic!("Unsupported solver type")
     }
@@ -358,77 +311,4 @@ fn group_classes(prob: &Problem) -> (usize, [i8; 2], [usize; 2], [usize; 2], Vec
     }
     neg.append(&mut pos);
     (2, [1, -1], start, count, neg)
-}
-
-fn read_file(filename: &str) -> Problem {
-    let file = fs::File::open(filename).unwrap();
-    let lines = io::BufReader::new(file).lines();
-    let mut y = Vec::new();
-    let mut x = Vec::new();
-    let mut n = 0usize;
-    for line in lines {
-        if let Ok(l) = line {
-            let mut row = Vec::new();
-            let mut elements = l.split_whitespace();
-            if let Some(elem) = elements.next() {
-                y.push(elem.parse::<f64>().unwrap())
-            }
-            let mut index = 1;
-            for elem in elements {
-                let node = FeatureNode::parse_str(elem);
-                while node.index > index {
-                    row.push(FeatureNode { index, value: 0.0 });
-                    index += 1;
-                }
-                index += 1;
-            }
-            let last_index = row.last().unwrap().index;
-            if last_index > n {
-                n = last_index
-            }
-            x.push(row)
-        }
-    }
-    let mut new_x = Vec::new();
-    for row in x {
-        let mut new_row = vec![1.0; n + 1];
-        for feature_node in row {
-            new_row[feature_node.index - 1] = feature_node.value
-        }
-        new_x.push(new_row)
-    }
-    Problem {
-        l: new_x.len(),
-        n: n + 1,
-        y,
-        x: new_x,
-        bias: 1.0,
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn group() {
-        let prob = read_file("heart_scale");
-        let (model, n_iter) = train(
-            &prob,
-            Parameter {
-                solver_type: SolverType::L2R_L1LOSS_SVC_DUAL,
-                eps: 0.1,
-                C: 1.0,
-                nr_weight: 0,
-                weight_label: 0,
-                weight: 0.0,
-                p: 0.1,
-                nu: 0.5,
-                init_sol: 0.0,
-                regularize_bias: 1,
-                max_iter: 10000,
-                random_seed: 5489,
-            },
-        );
-        println!("{:?}", model.w);
-    }
 }
