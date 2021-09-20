@@ -119,8 +119,8 @@ impl SparseOperator {
 
     #[inline]
     pub fn axpy(a: f64, x: &[f64], y: &mut Vec<f64>) {
-        for (i, j) in y.iter_mut().zip(x.iter()) {
-            *i += a * j
+        for (i, &j) in y.iter_mut().zip(x.iter()) {
+            *i = a.mul_add(j, *i)
         }
     }
 }
@@ -225,7 +225,7 @@ fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter, w: &mut Vec<f64>) -> us
                 break;
             } else {
                 active_size = l;
-                print!("*");
+                // print!("*");
                 PGmax_old = f64::INFINITY;
                 PGmin_old = f64::NEG_INFINITY;
                 continue;
@@ -300,7 +300,6 @@ fn group_classes(prob: &Problem) -> (usize, [i8; 2], [usize; 2], [usize; 2], Vec
     let count = [no_neg, prob.l - no_neg];
     let mut neg = Vec::with_capacity(no_neg);
     let mut pos = Vec::with_capacity(prob.l - no_neg);
-    // TODO bench against filter map
     for (ind, &val) in prob.y.iter().enumerate() {
         if val <= 0.0 {
             neg.push(ind)
