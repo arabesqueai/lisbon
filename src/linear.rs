@@ -145,7 +145,6 @@ fn solve_l2r_l1l2_svc(
     let mut i;
     let mut iter = 0;
     let mut s;
-    let mut C;
     let mut d;
     let mut G;
     let mut alpha_old;
@@ -166,7 +165,7 @@ fn solve_l2r_l1l2_svc(
 
     // default solver_type: L2R_L2LOSS_SVC_DUAL
     // let diag = [0.0, 0.0, 0.0];
-    let upper_bound = [param.C, 0.0, param.C];
+    // let upper_bound = [param.C, 0.0, param.C];
 
     for i in 0..l {
         let xi = prob.x[i];
@@ -196,7 +195,7 @@ fn solve_l2r_l1l2_svc(
             G = yi as f64
                 * (SparseOperator::dot(w, xi) + intercept * prob.bias)
                 - 1f64;
-            C = upper_bound[(prob.y[i] as i8 + 1) as usize];
+            // C = upper_bound[(prob.y[i] as i8 + 1) as usize];
             PG = 0.0;
             if alpha[i] == 0.0 {
                 if G > PGmax_old {
@@ -206,7 +205,7 @@ fn solve_l2r_l1l2_svc(
                 } else if G < 0.0 {
                     PG = G
                 }
-            } else if alpha[i] == C {
+            } else if alpha[i] == param.C {
                 if G < PGmin_old {
                     active_size -= 1;
                     index.swap(s, active_size);
@@ -222,7 +221,7 @@ fn solve_l2r_l1l2_svc(
 
             if PG.abs() > 1.0e-12 {
                 alpha_old = alpha[i];
-                alpha[i] = (alpha[i] - G / QD[i]).max(0.0).min(C);
+                alpha[i] = (alpha[i] - G / QD[i]).max(0.0).min(param.C);
                 d = (alpha[i] - alpha_old) * yi as f64;
                 SparseOperator::axpy(d, xi, w);
                 intercept += d * prob.bias;
