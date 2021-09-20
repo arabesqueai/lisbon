@@ -5,14 +5,20 @@ use std::fmt::Debug;
 #[derive(Debug)]
 pub struct Problem<'a> {
     l: usize,          // number of training data
-    n: usize,          // number of features (including the bias feature if bias >= 0)
+    n: usize, // number of features (including the bias feature if bias >= 0)
     y: &'a [f64], // array of target values (OPT bool for classification and f64 for regression)
     x: Vec<&'a [f64]>, // array of sparsely represented traning vectors
     bias: f64,    // < 0 if no bias term
 }
 
 impl<'a> Problem<'a> {
-    pub fn new(l: usize, n: usize, y: &'a [f64], x: Vec<&'a [f64]>, bias: f64) -> Self {
+    pub fn new(
+        l: usize,
+        n: usize,
+        y: &'a [f64],
+        x: Vec<&'a [f64]>,
+        bias: f64,
+    ) -> Self {
         Self { l, n, y, x, bias }
     }
 }
@@ -22,7 +28,7 @@ impl<'a> Problem<'a> {
 pub enum SolverType {
     L2R_LR,              // L2-regularized logistic regression (primal)
     L2R_L2LOSS_SVC_DUAL, // L2-regularized L2-loss support vector classification (dual)
-    L2R_L2LOSS_SVC,      // L2-regularized L2-loss support vector classification (primal)
+    L2R_L2LOSS_SVC, // L2-regularized L2-loss support vector classification (primal)
     L2R_L1LOSS_SVC_DUAL, // L2-regularized L1-loss support vector classification (dual)
     MCSVM_CS,            // support vector classification by Crammer and Singer
     L1R_L2LOSS_SVC,      // L1-regularized L2-loss support vector classification
@@ -81,7 +87,7 @@ pub struct Parameter {
 
 pub struct Model {
     pub param: Parameter,
-    pub nr_class: usize,   // number of classes; nr_class = 2 for regression.
+    pub nr_class: usize, // number of classes; nr_class = 2 for regression.
     pub nr_feature: usize, // number of features
     pub w: Vec<f64>, // feature weights; its size is nr_feature*nr_class but is nr_feature if nr_class = 2
     pub label: [i8; 2], // label of each class
@@ -127,7 +133,11 @@ impl SparseOperator {
 }
 
 #[allow(non_snake_case)]
-fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter, w: &mut Vec<f64>) -> usize {
+fn solve_l2r_l1l2_svc(
+    prob: &Problem,
+    param: &Parameter,
+    w: &mut Vec<f64>,
+) -> usize {
     let l = prob.l;
     // let w_size = prob.n;
     let eps = param.eps;
@@ -183,7 +193,9 @@ fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter, w: &mut Vec<f64>) -> us
             let yi = prob.y[i];
             let xi = &prob.x[i];
 
-            G = yi as f64 * (SparseOperator::dot(w, xi) + intercept * prob.bias) - 1f64;
+            G = yi as f64
+                * (SparseOperator::dot(w, xi) + intercept * prob.bias)
+                - 1f64;
             C = upper_bound[(prob.y[i] as i8 + 1) as usize];
             PG = 0.0;
             if alpha[i] == 0.0 {
@@ -223,7 +235,10 @@ fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter, w: &mut Vec<f64>) -> us
         //     print!(".")
         // }
 
-        if PGmax_new - PGmin_new <= eps && PGmax_new.abs() <= eps && PGmin_new.abs() <= eps {
+        if PGmax_new - PGmin_new <= eps
+            && PGmax_new.abs() <= eps
+            && PGmin_new.abs() <= eps
+        {
             if active_size == l {
                 break;
             } else {
@@ -251,7 +266,9 @@ fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter, w: &mut Vec<f64>) -> us
 
     // println!("Objective value = {}", v / 2.0);
     // println!("nSV = {}", nSV);
-    w.push(intercept);
+    if prob.bias != 0.0 {
+        w.push(intercept);
+    }
     iter
 }
 
@@ -297,7 +314,9 @@ pub fn train(prob: &Problem, param: Parameter) -> (Model, usize) {
 }
 
 // group_classes reorganise training data into consecutive labels
-fn group_classes(prob: &Problem) -> (usize, [i8; 2], [usize; 2], [usize; 2], Vec<usize>) {
+fn group_classes(
+    prob: &Problem,
+) -> (usize, [i8; 2], [usize; 2], [usize; 2], Vec<usize>) {
     let no_neg = prob.y.iter().filter(|&&a| a <= 0.0).count();
     let start = [0, no_neg];
     let count = [no_neg, prob.l - no_neg];

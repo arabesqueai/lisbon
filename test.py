@@ -1,29 +1,22 @@
-from sklearn import base, datasets
+from pmlb import fetch_data
+from memory_profiler import memory_usage
 from sklearn import svm
-import numpy as np
 import lisbon
 import time
 
-iris = datasets.load_breast_cancer()
-be = base.BaseEstimator()
+X, y = fetch_data("coil2000", return_X_y=True)
 
-X, y = be._validate_data(
-    iris.data,
-    iris.target,
-    accept_sparse="csr",
-    dtype=np.float64,
-    order="C",
-    accept_large_sparse=False,
-)
-
-# print(X.shape)
-linearsvc = svm.LinearSVC(loss='hinge', max_iter=10000, random_state=0)
+linearsvc = svm.LinearSVC(loss="hinge", max_iter=10000, random_state=0)
 t = time.time()
-linearsvc.fit(X, y)
-print(f"liblinear took {time.time() - t} seconds")
-print(linearsvc.coef_, linearsvc.intercept_)
+mem_usage = memory_usage((linearsvc.fit, [X, y]), interval=1)
+print(f"liblinear took {time.time() - t} seconds and {linearsvc.n_iter_} iterations")
+print("last 10 coefficients: ", linearsvc.coef_[:, -10:])
+print("Intercept: ", linearsvc.intercept_)
+print("Max memory usage: ", max(mem_usage))
 svm._base.liblinear = lisbon
 t = time.time()
-linearsvc.fit(X, y)
-print(f"lisbon took {time.time() - t} seconds")
-print(linearsvc.coef_, linearsvc.intercept_)
+mem_usage = memory_usage((linearsvc.fit, [X, y]), interval=1)
+print(f"lisbon took {time.time() - t} seconds and {linearsvc.n_iter_} iterations")
+print("last 10 coefficients: ", linearsvc.coef_[:, -10:])
+print("Intercept: ", linearsvc.intercept_)
+print("Max memory usage: ", max(mem_usage))
