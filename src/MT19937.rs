@@ -41,15 +41,20 @@ impl MT19937 {
     #[inline]
     fn fill_next_state(&mut self) {
         for i in 0..N - M {
-            let x = (self.state[i] & UPPER_MASK) | (self.state[i + 1] & LOWER_MASK);
-            self.state[i] = self.state[i + M] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
+            let x =
+                (self.state[i] & UPPER_MASK) | (self.state[i + 1] & LOWER_MASK);
+            self.state[i] =
+                self.state[i + M] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
         }
         for i in N - M..N - 1 {
-            let x = (self.state[i] & UPPER_MASK) | (self.state[i + 1] & LOWER_MASK);
-            self.state[i] = self.state[i + M - N] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
+            let x =
+                (self.state[i] & UPPER_MASK) | (self.state[i + 1] & LOWER_MASK);
+            self.state[i] =
+                self.state[i + M - N] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
         }
         let x = (self.state[N - 1] & UPPER_MASK) | (self.state[0] & LOWER_MASK);
-        self.state[N - 1] = self.state[M - 1] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
+        self.state[N - 1] =
+            self.state[M - 1] ^ (x >> 1) ^ ((x & ONE) * MATRIX_A);
         self.idx = 0;
     }
 
@@ -57,7 +62,8 @@ impl MT19937 {
         self.idx = N;
         self.state[0] = Wrapping(seed);
         for i in 1..N {
-            self.state[i] = Wrapping(1812433253) * (self.state[i - 1] ^ (self.state[i - 1] >> 30))
+            self.state[i] = Wrapping(1812433253)
+                * (self.state[i - 1] ^ (self.state[i - 1] >> 30))
                 + Wrapping(i as u32);
         }
     }
@@ -100,7 +106,7 @@ impl MT19937 {
                 l = m as u32;
             }
         }
-        return (m >> 32) as u32;
+        (m >> 32) as u32
     }
 }
 

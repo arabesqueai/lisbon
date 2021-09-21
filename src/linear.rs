@@ -120,12 +120,12 @@ impl SparseOperator {
     }
 
     #[inline]
-    pub fn dot(s: &Vec<f64>, x: &[f64]) -> f64 {
+    pub fn dot(s: &[f64], x: &[f64]) -> f64 {
         s.iter().zip(x.iter()).map(|(a, b)| a * b).sum()
     }
 
     #[inline]
-    pub fn axpy(a: f64, x: &[f64], y: &mut Vec<f64>) {
+    pub fn axpy(a: f64, x: &[f64], y: &mut [f64]) {
         for (i, &j) in y.iter_mut().zip(x.iter()) {
             *i = a.mul_add(j, *i)
         }
@@ -220,7 +220,7 @@ fn solve_l2r_l1l2_svc(
 
             if PG.abs() > 1.0e-12 {
                 alpha_old = alpha[i];
-                alpha[i] = (alpha[i] - G / QD[i]).max(0.0).min(param.C);
+                alpha[i] = (alpha[i] - G / QD[i]).clamp(0.0, param.C);
                 d = (alpha[i] - alpha_old) * yi as f64;
                 SparseOperator::axpy(d, xi, w);
                 intercept += d * prob.bias;
