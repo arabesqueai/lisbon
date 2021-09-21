@@ -153,7 +153,6 @@ fn solve_l2r_l1l2_svc(
     let mut QD: Vec<f64> = vec![0.0; l];
     let mut index: Vec<usize> = (0..l).collect();
     let mut alpha: Vec<f64> = vec![0.0; l];
-    // TODO: benchmark preallocation
     let mut active_size = l;
 
     // PG: projected gradient, for shrinking and stopping
