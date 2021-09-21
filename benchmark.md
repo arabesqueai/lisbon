@@ -6,6 +6,15 @@ As with all benchmarks, your mileage may vary :)
 
 48842 rows of data and 14 features. See `bench.py`.
 
+| library | time (s) | memory (MB) |
+| :-: | :-: | :-: |
+| liblinear | 6.473 | 137.4 |
+| lisbon with `cpu=native` | 3.725 | 127.9 |
+| lisbon without `cpu=native` | 5.784 | 127.8 |
+
+<details><summary>Click for details</summary>
+<p>
+
 `liblinear`
 
 ```
@@ -35,10 +44,22 @@ last 10 coefficients:  [[ 0.00066071  0.00200457  0.0010956   0.00202347  0.0008
 Intercept:  [0.00033345]
 Max memory usage:  127.75390625
 ```
+  
+</p>
+</details>
 
 ## With Arabesque's dataset
 
 210447 rows of data and 1000 features.
+
+| library | time (s) | memory (MB) |
+| :-: | :-: | :-: |
+| liblinear | 41.096 | 5765.0 |
+| lisbon with `cpu=native` | 25.569 | 2539.4 |
+| lisbon without `cpu=native` | 38.162 | 2538.5 |
+
+<details><summary>Click for details</summary>
+<p>
 
 `liblinear`
 
@@ -70,10 +91,24 @@ last 10 coefficients:  [[ 2.16037238  0.47328366  2.19392385  0.87080528  1.5805
 Intercept:  [-0.14189001]
 Max memory usage:  2538.50390625
 ```
+  
+    
+</p>
+</details>
 
 ## With Arabesque's bigger dataset
 
 747922 rows of data and 1000 features.
+
+
+| library | time (s) | memory (MB) |
+| :-: | :-: | :-: |
+| liblinear | 84.259 | 20205.0 |
+| lisbon with `cpu=native` | 50.791 | 8742.1 |
+| lisbon without `cpu=native` | 76.959 | 8741.7 |
+
+<details><summary>Click for details</summary>
+<p>
 
 `liblinear`
 
