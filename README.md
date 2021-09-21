@@ -2,7 +2,7 @@
 
 _DO NOT USE_ if your function arguments do not look like `svm.LinearSVC(loss="hinge")`.
 
-`lisbon` aims to be a drop-in replacement of `liblinear` where scikit-learn uses for linear classification problems, currently only supports L2 regularised hinge loss by solving the dual problem (routine 3). The same APIs are provided as `scikit-learn`'s `liblinear` wrapper so you can monkey-patch `scikit-learn`'s svm library to use `lisbon`
+`lisbon` aims to be a drop-in replacement for `liblinear` which `scikit-learn` leaverages for linear classification problems, currently only supports L2 regularised hinge loss by solving the dual problem (routine 3). The same APIs are provided as `scikit-learn`'s `liblinear` wrapper so you can monkey-patch `scikit-learn`'s svm library to use `lisbon`
 
 ```python
 from sklearn import svm
@@ -11,15 +11,16 @@ import lisbon
 svm._base.liblinear = lisbon
 ```
 
-and the following computation will leverage `lisbon`. To switch back: `svm._base.liblinear = _liblinear`.
+and the following computations will use `lisbon`. To switch back: `svm._base.liblinear = _liblinear`.
 
 ## Installation
 
-- Make sure you have the Rust toolchain `rustc`, `cargo`, `rust-std` installed. The quickest way to do it is `curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal`
+- Make sure you have the Rust toolchain `rustc`, `cargo`, `rust-std` installed. The quickest way to do it is `curl https://sh.rustup.rs -sSf | sh -s`
+  - For a minimal installation: `curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal`
 - With your desired Python environment, `pip install maturin`
 - From `lisbon`'s projecr root, run `maturin develop --release` will install `lisbon` as a package to your Python environment
-  - Optionally, `RUSTFLAGS='-C target-feature=+avx2,+fma -C target-cpu=native' maturin develop --release` to force more SIMD optimisation (if your CPU supports it)
-- For dev/benchmark purposes, consider install the packages listed in `requirements-dev.txt`
+  - Optionally, `RUSTFLAGS='-C target-feature=+avx2,+fma -C target-cpu=native' maturin develop --release` to force more SIMD optimisations (if your CPU supports it)
+- For dev/benchmark purposes, consider installing the packages listed in `requirements-dev.txt`
 
 ## Limitations
 
@@ -31,9 +32,10 @@ Currently, `lisbon` only supports L2 regularised hinge loss and does not support
 
 ## Deviations from the source implementation
 
-1. As with `scikit-learn`'s modification, the order of labels are flipped
+1. As with `scikit-learn`'s modification, the order of labels are flipped to be consistent with the rest of the `scikit-learn` family
    - `liblinear` uses [+1, -1] ordering
    - `scikit-learn` uses [-1, +1] ordering
+2. Uses a MT19937 + tweaked Lemire post-processor to generate a random number within range
 
 ## Why is lisbon faster
 
