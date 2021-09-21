@@ -48,3 +48,4 @@ else:
     print(f"lisbon took {time.time() - t} seconds and {linearsvc.n_iter_} iterations")
     print("last 10 coefficients: ", linearsvc.coef_[:, -10:])
     print("Intercept: ", linearsvc.intercept_)
+    print("Max memory usage: ", max(mem_usage))
