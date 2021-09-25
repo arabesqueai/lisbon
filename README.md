@@ -47,3 +47,20 @@ Currently, `lisbon` only supports L2 regularised hinge loss and does not support
 
 1. [2-norm](https://dl.acm.org/doi/pdf/10.1145/3061665)
 2. [A Dual Coordinate Descent Method for Large-scale Linear SVM](https://www.csie.ntu.edu.tw/~cjlin/papers/cddual.pdf)
+
+### License
+
+This project is licensed under either of
+
+ * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
+   https://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license ([LICENSE-MIT](LICENSE-MIT) or
+   https://opensource.org/licenses/MIT)
+
+at your option.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in lisbon by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.
