@@ -18,7 +18,7 @@ and the following computations will use `lisbon`. To switch back: `svm._base.lib
 - Make sure you have the Rust toolchain `rustc`, `cargo`, `rust-std` installed. The quickest way to do it is `curl https://sh.rustup.rs -sSf | sh -s`
   - For a minimal installation: `curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal`
 - With your desired Python environment, `pip install maturin`
-- From `lisbon`'s projecr root, run `RUSTFLAGS='-C target-cpu=native' maturin develop --release` will install `lisbon` as a package to your Python environment
+- From `lisbon`'s project root, run `RUSTFLAGS='-C target-cpu=native' maturin develop --release` will install `lisbon` as a package to your Python environment
   - Note that the `RUSTFLAGS='-C target-cpu=native'` environmental variable ensures that Rustc compiles against your CPU's supported instruction sets to enable more SIMD optimisations (e.g. AVX2, FMA).
 - For dev/benchmark purposes, consider installing the packages listed in `requirements-dev.txt`
 
