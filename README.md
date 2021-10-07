@@ -11,7 +11,7 @@ import lisbon
 svm._base.liblinear = lisbon
 ```
 
-and the following computations will use `lisbon`. To switch back: `svm._base.liblinear = _liblinear`.
+and the following computations will use `lisbon`. To switch back: `svm._base.liblinear = svm._liblinear`.
 
 ## Installation
 
