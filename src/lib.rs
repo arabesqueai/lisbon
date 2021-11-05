@@ -58,8 +58,8 @@ fn lisbon(_py: Python, m: &PyModule) -> PyResult<()> {
             max_iter,
             random_seed,
         };
-        let (model, n_iter) = linear::train(&prob, param);
-        let weight = Array2::from_shape_vec((1, model.w.len()), model.w)
+        let (n_iter, w) = linear::train(&prob, param);
+        let weight = Array2::from_shape_vec((1, w.len()), w)
             .unwrap()
             .into_pyarray(py);
         let n_iter = vec![n_iter].into_pyarray(py);
