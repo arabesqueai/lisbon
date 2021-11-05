@@ -39,18 +39,12 @@ fn lisbon(_py: Python, m: &PyModule) -> PyResult<()> {
         _epsilon: f64,
         _sample_weight: PyReadonlyArray1<'py, f64>,
     ) -> PyResult<(&'py PyArray2<f64>, &'py PyArray1<usize>)> {
-        let sparse = dense_to_slices(&x);
+        let slices = dense_to_slices(&x);
         let target = y.as_slice().unwrap();
         let l = x.shape()[0];
         let n = x.shape()[1];
-        let b = {
-            if bias > 0.0 {
-                bias
-            } else {
-                0.0
-            }
-        };
-        let prob = Problem::new(l, n, target, sparse, b);
+        let b = if bias > 0.0 { bias } else { 0.0 };
+        let prob = Problem::new(l, n, target, slices, b);
         let param = Parameter {
             solver_type: solver_type.try_into().unwrap(),
             eps,
