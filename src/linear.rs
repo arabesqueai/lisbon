@@ -97,9 +97,8 @@ fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter) -> (usize, Vec<f64>) {
     let mut PGmin_new;
 
     for i in 0..l {
-        let xi = prob.x[i];
-        QD[i] = BLASOperator::nrm2_sq(xi) + prob.bias * prob.bias;
-        BLASOperator::axpy(prob.y[i] as f64 * alpha[i], xi, &mut w);
+        QD[i] = BLASOperator::nrm2_sq(prob.x[i]) + prob.bias * prob.bias;
+        BLASOperator::axpy(prob.y[i] as f64 * alpha[i], prob.x[i], &mut w);
         intercept += prob.y[i] as f64 * alpha[i] * prob.bias;
     }
 
@@ -116,11 +115,10 @@ fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter) -> (usize, Vec<f64>) {
         s = 0;
         while s < active_size {
             i = index[s];
-            let yi = prob.y[i];
-            let xi = &prob.x[i];
 
-            G = yi as f64 * (BLASOperator::dot(&w, xi) + intercept * prob.bias)
-                - 1f64;
+            G = prob.y[i]
+                * (BLASOperator::dot(&w, prob.x[i]) + intercept * prob.bias)
+                - 1.0;
             PG = 0.0;
             if alpha[i] == 0.0 {
                 if G > PGmax_old {
@@ -147,8 +145,8 @@ fn solve_l2r_l1l2_svc(prob: &Problem, param: &Parameter) -> (usize, Vec<f64>) {
             if PG.abs() > 1.0e-12 {
                 alpha_old = alpha[i];
                 alpha[i] = (alpha[i] - G / QD[i]).clamp(0.0, param.C);
-                d = (alpha[i] - alpha_old) * yi as f64;
-                BLASOperator::axpy(d, xi, &mut w);
+                d = (alpha[i] - alpha_old) * prob.y[i];
+                BLASOperator::axpy(d, prob.x[i], &mut w);
                 intercept += d * prob.bias;
             }
 
