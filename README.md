@@ -1,7 +1,5 @@
 # lisbon
 
-_DO NOT USE_ if your function arguments do not look like `svm.LinearSVC(loss="hinge")`.
-
 `lisbon` aims to be a drop-in replacement for `liblinear` which `scikit-learn` leaverages for linear classification problems, currently only supports L2 regularised hinge loss by solving the dual problem (routine 3). The same APIs are provided as `scikit-learn`'s `liblinear` wrapper so you can monkey-patch `scikit-learn`'s svm library to use `lisbon`
 
 ```python
@@ -12,6 +10,8 @@ svm._base.liblinear = lisbon
 ```
 
 and the following computations will use `lisbon`. To switch back: `svm._base.liblinear = svm._liblinear`.
+
+_DO NOT USE_ if your function arguments do not look like `svm.LinearSVC(loss="hinge")`.
 
 ## Installation
 
@@ -52,10 +52,10 @@ Currently, `lisbon` only supports L2 regularised hinge loss and does not support
 
 This project is licensed under either of
 
- * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
-   https://www.apache.org/licenses/LICENSE-2.0)
- * MIT license ([LICENSE-MIT](LICENSE-MIT) or
-   https://opensource.org/licenses/MIT)
+- Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
+  https://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or
+  https://opensource.org/licenses/MIT)
 
 at your option.
 
