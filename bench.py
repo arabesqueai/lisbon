@@ -1,7 +1,6 @@
 from pmlb import fetch_data
 from memory_profiler import memory_usage
 from sklearn import svm
-import lisbon
 import numpy as np
 import time
 import sys
@@ -12,40 +11,28 @@ X = np.ascontiguousarray(X)
 y = np.ascontiguousarray(y)
 
 
-# Memory profiler doesn't run on MacOS
-if sys.platform.startswith("darwin"):
-    linearsvc = svm.LinearSVC(loss="hinge", max_iter=1000, random_state=0)
+def run():
+    linearsvc = svm.LinearSVC(loss="hinge", max_iter=5000, random_state=0)
     t = time.time()
-    linearsvc.fit(X, y)
-    print(
-        f"liblinear took {time.time() - t} seconds and {linearsvc.n_iter_} iterations"
-    )
+    if not sys.platform.startswith("darwin"):
+        mem_usage = memory_usage((linearsvc.fit, [X, y]), interval=1)
+    else:
+        linearsvc.fit(X, y)
+    time_taken = time.time() - t
+    print(f"liblinear took {time_taken} seconds and {linearsvc.n_iter_} iterations")
     print("last 10 coefficients: ", linearsvc.coef_[:, -10:])
     print("Intercept: ", linearsvc.intercept_)
+    if not sys.platform.startswith("darwin"):
+        print("Max memory usage: ", max(mem_usage))
+    return time_taken
 
-    svm._base.liblinear = lisbon
 
-    t = time.time()
-    linearsvc.fit(X, y)
-    print(f"lisbon took {time.time() - t} seconds and {linearsvc.n_iter_} iterations")
-    print("last 10 coefficients: ", linearsvc.coef_[:, -10:])
-    print("Intercept: ", linearsvc.intercept_)
-else:
-    linearsvc = svm.LinearSVC(loss="hinge", max_iter=1000, random_state=0)
-    t = time.time()
-    mem_usage = memory_usage((linearsvc.fit, [X, y]), interval=1)
-    print(
-        f"liblinear took {time.time() - t} seconds and {linearsvc.n_iter_} iterations"
-    )
-    print("last 10 coefficients: ", linearsvc.coef_[:, -10:])
-    print("Intercept: ", linearsvc.intercept_)
-    print("Max memory usage: ", max(mem_usage))
+liblinear_time = run()
 
-    svm._base.liblinear = lisbon
+import lisbon  # noqa
 
-    t = time.time()
-    mem_usage = memory_usage((linearsvc.fit, [X, y]), interval=1)
-    print(f"lisbon took {time.time() - t} seconds and {linearsvc.n_iter_} iterations")
-    print("last 10 coefficients: ", linearsvc.coef_[:, -10:])
-    print("Intercept: ", linearsvc.intercept_)
-    print("Max memory usage: ", max(mem_usage))
+lisbon_time = run()
+
+if lisbon_time > liblinear_time:
+    print("Lisbon is slower than liblinear.")
+    exit(1)
