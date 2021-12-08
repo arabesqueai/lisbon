@@ -2,3 +2,5 @@
 .vscode/settings.json
 /pmlb
 Cargo.lock
+__pycache__
+*.so
