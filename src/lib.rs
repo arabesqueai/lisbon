@@ -1,3 +1,11 @@
+// Copyright (c) 2021 Tony Yang, Arabesque AI
+//
+// Licensed under the Apache License, Version 2.0
+// <LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0> or the MIT
+// license <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. All files in the project carrying such notice may not be copied,
+// modified, or distributed except according to those terms.
+
 #[allow(non_snake_case)]
 mod MT19937;
 mod linear;
@@ -16,9 +24,6 @@ fn set_verbosity_wrap(_verbose: i64) -> PyResult<()> {
     Ok(())
 }
 
-/// A Python module implemented in Rust. The name of this function must match
-/// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
-/// import the module.
 #[allow(non_snake_case)]
 #[pymodule]
 fn lisbon(_py: Python, m: &PyModule) -> PyResult<()> {
