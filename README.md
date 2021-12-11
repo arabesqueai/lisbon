@@ -1,17 +1,17 @@
 # lisbon
 
-`lisbon` aims to be a drop-in replacement for `liblinear` which `scikit-learn` leaverages for linear classification problems, currently only supports L2 regularised hinge loss by solving the dual problem (routine 3). The same APIs are provided as `scikit-learn`'s `liblinear` wrapper so you can monkey-patch `scikit-learn`'s svm library to use `lisbon`
+`lisbon` aims to be a drop-in replacement for `liblinear` which `scikit-learn` leaverages for linear classification problems, currently only supports L2 regularised hinge loss by solving the dual problem (routine 3). The APIs follow `scikit-learn`'s `liblinear` wrapper and importing the Python library will monkey-patch `scikit-learn`'s svm library to use `lisbon` for the supported calculation.
 
 ```python
 from sklearn import svm
 import lisbon
-
-svm._base.liblinear = lisbon
 ```
 
-and the following computations will use `lisbon`. To switch back: `svm._base.liblinear = svm._liblinear`.
+and the following computations will use `lisbon` if supported. To switch back `lisbon.unload()` will swap back the original fit function.
 
-_DO NOT USE_ if your function arguments do not look like `svm.LinearSVC(loss="hinge")`.
+Please see [`lisbon/__init__.py`](lisbon/__init__.py) to see how the runtime patching is done and [`bench.py`](bench.py) for an example.
+
+_DO NOT USE_ if your platform does not support `AVX2` instruction set.
 
 ## Installation
 
@@ -23,6 +23,8 @@ _DO NOT USE_ if your function arguments do not look like `svm.LinearSVC(loss="hi
 - For dev/benchmark purposes, consider installing the packages listed in `requirements-dev.txt`
 
 ## Limitations
+
+`lisbon`'s speed up comes from vector instruction sets hence some platforms are not supported if not built from source.
 
 Currently, `lisbon` only supports L2 regularised hinge loss and does not support
 
@@ -39,9 +41,9 @@ Currently, `lisbon` only supports L2 regularised hinge loss and does not support
 
 ## Why is lisbon faster
 
-- `liblinear` uses sparse matrix representation for the dot/norm operations, so `scikit-learn` needs to convert the dense numpy matrix to sparse first then pass to liblinear. Our encoded data is not sparse so that’s inefficient and prevents some simd optimisations
-- By reading the numpy C array directly underneath there’s no need to copy/duplicate data so saves memory
-- Specialised. Some array reads and computations are optimised away as we know what the values are for the specific problems
+- `liblinear` uses sparse matrix representation for the dot/norm operations, so `scikit-learn` needs to convert the dense numpy matrix to sparse first then pass to liblinear. `lisbon` uses the dense matrix directly as sparse represented data can be inefficient and prevents some simd optimisations.
+- By reading the numpy C array directly underneath there’s no need to copy/duplicate data which saves memory.
+- Specialised. Some array reads and computations are optimised away as we know what the values are for the L2 regularised hinge loss routine.
 
 ## Ref
 
