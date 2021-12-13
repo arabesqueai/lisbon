@@ -32,7 +32,7 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Install lisbon
         run: |
-          RUSTFLAGS='-C target-cpu=native' maturin build --release 
+          RUSTFLAGS='-C target-cpu=native' maturin build --release -i python3.9
           pip install target/wheels/*.whl
       - name: Generate new index.html
         run: python bench.py
