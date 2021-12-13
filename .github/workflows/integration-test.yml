@@ -32,7 +32,8 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Install lisbon
         run: |
-          RUSTFLAGS='-C target-cpu=native' maturin build --release -i python3.9
+          lscpu
+          RUSTFLAGS='-C target-feature=+avx2,+fma' maturin build --release -i python3.9
           pip install target/wheels/*.whl
       - name: Run benchmark test
         run: python bench.py
