@@ -34,5 +34,5 @@ jobs:
         run: |
           RUSTFLAGS='-C target-cpu=native' maturin build --release -i python3.9
           pip install target/wheels/*.whl
-      - name: Generate new index.html
+      - name: Run benchmark test
         run: python bench.py
