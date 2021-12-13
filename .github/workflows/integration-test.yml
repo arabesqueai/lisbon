@@ -31,6 +31,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
       - name: Install lisbon
-        run: RUSTFLAGS='-C target-cpu=native' maturin develop --release
+        run: |
+          RUSTFLAGS='-C target-cpu=native' maturin build --release 
+          pip install target/wheels/*.whl
       - name: Generate new index.html
         run: python bench.py
