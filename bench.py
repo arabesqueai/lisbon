@@ -6,7 +6,7 @@ import time
 import sys
 import os
 
-X, y = fetch_data("adult", return_X_y=True, local_cache_dir="./pmlb/")
+X, y = fetch_data("clean2", return_X_y=True, local_cache_dir="./pmlb/")
 # Make sure the input data is C-style row contigueous array (row orientated)
 X = np.ascontiguousarray(X)
 y = np.ascontiguousarray(y)
