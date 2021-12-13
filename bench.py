@@ -13,7 +13,7 @@ y = np.ascontiguousarray(y)
 
 
 def run():
-    linearsvc = svm.LinearSVC(loss="hinge", max_iter=500, random_state=0)
+    linearsvc = svm.LinearSVC(loss="hinge", max_iter=2500, random_state=0)
     t = time.time()
     if not sys.platform.startswith("darwin"):
         mem_usage = memory_usage((linearsvc.fit, [X, y]), interval=1)
