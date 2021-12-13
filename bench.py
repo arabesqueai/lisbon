@@ -4,6 +4,7 @@ from sklearn import svm
 import numpy as np
 import time
 import sys
+import os
 
 X, y = fetch_data("adult", return_X_y=True, local_cache_dir="./pmlb/")
 # Make sure the input data is C-style row contigueous array (row orientated)
@@ -29,6 +30,7 @@ def run():
 
 liblinear_coef, liblinear_intercept, liblinear_time = run()
 
+sys.path.remove(os.getcwd())  # so that python imports from installed site-package
 import lisbon  # noqa
 
 lisbon_coef, lisbon_intercept, lisbon_time = run()
