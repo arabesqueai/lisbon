@@ -1,5 +1,7 @@
 # lisbon
 
+[![Release](https://github.com/arabesqueai/lisbon/actions/workflows/release.yml/badge.svg)](https://pypi.org/project/lisbon/)
+
 `lisbon` aims to be a drop-in replacement for `liblinear` which `scikit-learn` leaverages for linear classification problems, currently only supports L2 regularised hinge loss by solving the dual problem (routine 3). The APIs follow `scikit-learn`'s `liblinear` wrapper and importing the Python library will monkey-patch `scikit-learn`'s svm library to use `lisbon` for the supported calculation.
 
 ```python
