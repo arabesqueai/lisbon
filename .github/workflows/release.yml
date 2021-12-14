@@ -34,5 +34,5 @@ jobs:
       - name: Publish lisbon
         run: |
           sed -ie "s/version =.*dev.*/version = \"${GITHUB_REF/refs\/tags\/v/}\"/g" Cargo.toml && 
-          RUSTFLAGS='-C target-feature=+avx2,+fma' maturin publish -i python${{ matrix.python }} \
+          RUSTFLAGS='-C target-feature=+avx2,+fma' maturin publish --skip-existing -i python${{ matrix.python }} \
           -u __token__ -p ${{ secrets.MATURIN_PASSWORD }}
