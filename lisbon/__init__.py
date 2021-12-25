@@ -1,5 +1,6 @@
 try:
     from sklearn import svm as __svm
+    import numpy as np
 except ModuleNotFoundError:
     print("Please install scikit-learn to use lisbon.")
     exit()
@@ -15,7 +16,7 @@ def __lift(self, X, y, sample_weight=None):
         __svm._base._get_liblinear_solver_type(
             self.multi_class, self.penalty, self.loss, self.dual
         )
-        == 3
+        == 3 and np.unique(y) == 2
     ):
         __svm._base.liblinear = lisbon
     else:
