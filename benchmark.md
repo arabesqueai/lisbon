@@ -4,13 +4,13 @@ As with all benchmarks, your mileage may vary :)
 
 ## With PMLB's adult dataset
 
-48842 rows of data and 14 features. See `bench.py`.
+48842 rows of data and 14 features.
 
 | library | time (s) | memory (MB) |
 | :-: | :-: | :-: |
 | liblinear | 6.473 | 137.4 |
-| lisbon with `cpu=native` | 3.725 | 127.9 |
-| lisbon without `cpu=native` | 5.784 | 127.8 |
+| lisbon with `cpu=native` | 4.918 | 127.9 |
+| lisbon without `cpu=native` | 6.050 | 127.8 |
 
 <details><summary>Click for details</summary>
 <p>
@@ -28,21 +28,21 @@ Max memory usage:  137.41015625
 With `RUSTFLAGS='-C target-cpu=native'`
 
 ```
-lisbon took 3.725350856781006 seconds and 1000 iterations
+lisbon took 4.918327808380127 seconds and 1000 iterations
 last 10 coefficients:  [[ 0.00066071  0.00200457  0.0010956   0.00202347  0.00089573 -0.00021549
   -0.00014445 -0.00031917  0.00087296  0.01139567]]
 Intercept:  [0.00033345]
-Max memory usage:  127.85546875
+Max memory usage:  127.734375
 ```
 
 Without `RUSTFLAGS='-C target-cpu=native'`
 
 ```
-lisbon took 5.783940315246582 seconds and 1000 iterations
+lisbon took 6.049740791320801 seconds and 1000 iterations
 last 10 coefficients:  [[ 0.00066071  0.00200457  0.0010956   0.00202347  0.00089573 -0.00021549
   -0.00014445 -0.00031917  0.00087296  0.01139567]]
 Intercept:  [0.00033345]
-Max memory usage:  127.75390625
+Max memory usage:  127.74609375
 ```
   
 </p>
