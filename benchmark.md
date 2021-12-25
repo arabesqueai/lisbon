@@ -9,8 +9,8 @@ As with all benchmarks, your mileage may vary :)
 | library | time (s) | memory (MB) |
 | :-: | :-: | :-: |
 | liblinear | 6.473 | 137.4 |
-| lisbon with `cpu=native` | 4.918 | 127.9 |
-| lisbon without `cpu=native` | 6.050 | 127.8 |
+| lisbon with `cpu=native` | 4.918 | 127.7 |
+| lisbon without `cpu=native` | 6.050 | 127.7 |
 
 <details><summary>Click for details</summary>
 <p>
