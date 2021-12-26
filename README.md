@@ -2,7 +2,7 @@
 
 [![Release](https://github.com/arabesqueai/lisbon/actions/workflows/release.yml/badge.svg)](https://pypi.org/project/lisbon/)
 
-`lisbon` aims to be a drop-in replacement for `liblinear` which `scikit-learn` leaverages for linear classification problems, currently only supports L2 regularised hinge loss by solving the dual problem (routine 3). The APIs follow `scikit-learn`'s `liblinear` wrapper and importing the Python library will monkey-patch `scikit-learn`'s svm library to use `lisbon` for the supported calculation.
+`lisbon` aims to be a drop-in replacement for `liblinear` which `scikit-learn` leaverages for linear classification problems, currently only supports L2-regularised hinge loss for binary classification by solving the dual problem (routine 3). The APIs follow `scikit-learn`'s `liblinear` wrapper and importing the Python library will monkey-patch `scikit-learn`'s svm library to use `lisbon` for the supported calculation.
 
 ```python
 from sklearn import svm
@@ -13,15 +13,21 @@ and the following computations will use `lisbon` if supported. To switch back `l
 
 Please see [`lisbon/__init__.py`](lisbon/__init__.py) to see how the runtime patching is done and [`bench.py`](bench.py) for an example.
 
-_DO NOT USE_ if your platform does not support `AVX2` instruction set.
+_Install from source_ if your platform does not support `AVX2` instruction set as the PyPI packaged version assumes `AVX2` support.
 
 ## Installation
+
+### Install from PyPI
+
+`pip install lisbon`
+
+### Install from source
 
 - Make sure you have the Rust toolchain `rustc`, `cargo`, `rust-std` installed. The quickest way to do it is `curl https://sh.rustup.rs -sSf | sh -s`
   - For a minimal installation: `curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal`
 - With your desired Python environment, `pip install maturin`
-- From `lisbon`'s project root, run `RUSTFLAGS='-C target-cpu=native' maturin develop --release` will install `lisbon` as a package to your Python environment
-  - Note that the `RUSTFLAGS='-C target-cpu=native'` environmental variable ensures that Rustc compiles against your CPU's supported instruction sets to enable more SIMD optimisations (e.g. AVX2, FMA).
+- Clone this repository and from `lisbon`'s project root, run `RUSTFLAGS='-C target-cpu=native' maturin develop --release` will install `lisbon` as a package to your Python environment
+  - Note that the `RUSTFLAGS='-C target-cpu=native'` environmental variable ensures that rustc compiles against your CPU's supported instruction sets to enable more SIMD optimisations (e.g. AVX2, FMA).
 - For dev/benchmark purposes, consider installing the packages listed in `requirements-dev.txt`
 
 ## Limitations
@@ -33,6 +39,7 @@ Currently, `lisbon` only supports L2 regularised hinge loss and does not support
 1. sample weights
 2. class weights
 3. different penalty `C` for labels
+4. multiclass classification
 
 ## Deviations from the source implementation
 
@@ -43,9 +50,9 @@ Currently, `lisbon` only supports L2 regularised hinge loss and does not support
 
 ## Why is lisbon faster
 
-- `liblinear` uses sparse matrix representation for the dot/norm operations, so `scikit-learn` needs to convert the dense numpy matrix to sparse first then pass to liblinear. `lisbon` uses the dense matrix directly as sparse represented data can be inefficient and prevents some simd optimisations.
+- `liblinear` uses sparse matrix representation for the dot/norm operations, so `scikit-learn` needs to convert the dense numpy matrix to sparse first then pass to liblinear. `lisbon` uses the dense matrix directly as sparse represented data can be inefficient and prevents some SIMD optimisations.
 - By reading the numpy C array directly underneath there’s no need to copy/duplicate data which saves memory.
-- Specialised. Some array reads and computations are optimised away as we know what the values are for the L2 regularised hinge loss routine.
+- Specialised. Some array reads and computations are optimised away as we know what the values are for the L2-regularised hinge loss binary classification routine.
 
 ## Ref
 
