@@ -30,6 +30,14 @@ _Install from source_ if your platform does not support `AVX2` instruction set a
   - Note that the `RUSTFLAGS='-C target-cpu=native'` environmental variable ensures that rustc compiles against your CPU's supported instruction sets to enable more SIMD optimisations (e.g. AVX2, FMA).
 - For dev/benchmark purposes, consider installing the packages listed in `requirements-dev.txt`
 
+#### For Windows
+
+To set the rustc flags on windows with powershell:
+```powershell
+$Env:RUSTFLAGS = "-C target-cpu=native"
+maturin develop --release
+```
+
 ## Limitations
 
 `lisbon`'s speed up comes from vector instruction sets hence some platforms are not supported if not built from source.
