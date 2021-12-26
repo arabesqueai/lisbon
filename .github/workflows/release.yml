@@ -12,8 +12,8 @@ jobs:
   release:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        os: [windows-latest]
+        python: ["3.10"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -31,8 +31,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install maturin
-      - name: Publish lisbon
+      - name: Publish lisbon unix
+        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           sed -ie "s/version =.*dev.*/version = \"${GITHUB_REF/refs\/tags\/v/}\"/g" Cargo.toml && 
           RUSTFLAGS='-C target-feature=+avx2,+fma' maturin publish --skip-existing -i python${{ matrix.python }} \
           -u __token__ -p ${{ secrets.MATURIN_PASSWORD }}
+      - name: Publish lisbon windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          $TAG = $GITHUB_REF -replace '/refs/tags/v','' -and
+          ((Get-Content -path Cargo.toml -Raw) -replace 'version =.*dev.*',"version = `"$TAG`"") | Set-Content -Path Cargo.toml -and
+          RUSTFLAGS='-C target-feature=+avx2,+fma' maturin publish --skip-existing -i python${{ matrix.python }} -u __token__ -p ${{ secrets.MATURIN_PASSWORD }}
