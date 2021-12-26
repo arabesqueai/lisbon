@@ -42,5 +42,5 @@ jobs:
         run: |
           $TAG = $Env:GITHUB_REF -replace 'refs/tags/v',''
           ((Get-Content -path Cargo.toml -Raw) -replace 'version =.*dev.*',"version = `"$TAG`"") | Set-Content -Path Cargo.toml
-          set RUSTFLAGS='-C target-feature=+avx2,+fma'
+          $Env:RUSTFLAGS = "-C target-feature=+avx2,+fma"
           maturin publish --skip-existing -i python -u __token__ -p ${{ secrets.MATURIN_PASSWORD }}
