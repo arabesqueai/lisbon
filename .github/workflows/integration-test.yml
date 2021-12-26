@@ -3,8 +3,14 @@ name: IntegrationTest
 on:
   push:
     branches: [main, dev]
+    paths:
+      - "**.py"
+      - "**.rs"
   pull_request:
     branches: [main, dev]
+    paths:
+      - "**.py"
+      - "**.rs"
   workflow_dispatch:
 
 jobs:
