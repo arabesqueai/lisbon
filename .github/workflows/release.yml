@@ -1,0 +1,46 @@
+# Release package to PyPI upon tag push
+
+name: Release
+
+on:
+  # Triggers the workflow on tag push
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin
+      - name: Publish lisbon unix
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          sed -ie "s/version =.*dev.*/version = \"${GITHUB_REF/refs\/tags\/v/}\"/g" Cargo.toml && 
+          RUSTFLAGS='-C target-feature=+avx2,+fma' maturin publish --skip-existing -i python${{ matrix.python }} \
+          -u __token__ -p ${{ secrets.MATURIN_PASSWORD }}
+      - name: Publish lisbon windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          $TAG = $Env:GITHUB_REF -replace 'refs/tags/v',''
+          ((Get-Content -path Cargo.toml -Raw) -replace 'version =.*dev.*',"version = `"$TAG`"") | Set-Content -Path Cargo.toml
+          $Env:RUSTFLAGS = "-C target-feature=+avx2,+fma"
+          maturin publish --skip-existing -i python -u __token__ -p ${{ secrets.MATURIN_PASSWORD }}

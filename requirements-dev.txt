@@ -1,0 +1,5 @@
+pmlb
+memory_profiler
+scikit-learn
+numpy
+maturin

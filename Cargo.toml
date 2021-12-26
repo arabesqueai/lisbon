@@ -1,0 +1,22 @@
+[package]
+name = "lisbon"
+version = "0.1.0-dev"
+edition = "2018"
+
+[dependencies]
+numpy = "0.15.0"
+ndarray = "0.15.3"
+
+[lib]
+name = "lisbon"
+crate-type = ["cdylib"]
+
+[dependencies.pyo3]
+version = "0.15.1"
+features = ["extension-module"]
+
+[build-dependencies]
+pyo3-build-config = "0.15.1"
+
+[profile.release]
+lto = true
