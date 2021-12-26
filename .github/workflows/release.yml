@@ -40,11 +40,7 @@ jobs:
       - name: Publish lisbon windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          $TAG = $ENV:GITHUB_REF -replace '/refs/tags/v',''
+          $TAG = $Env:GITHUB_REF -replace 'refs/tags/v',''
           ((Get-Content -path Cargo.toml -Raw) -replace 'version =.*dev.*',"version = `"$TAG`"") | Set-Content -Path Cargo.toml
           set RUSTFLAGS='-C target-feature=+avx2,+fma'
-          Get-ChildItem -Path Env:
-          write-output $ENV:GITHUB_REF
-          write-output $TAG
-          get-Content Cargo.toml
           maturin publish --skip-existing -i python${{ matrix.python }} -u __token__ -p ${{ secrets.MATURIN_PASSWORD }}
