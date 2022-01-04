@@ -21,6 +21,8 @@ _Install from source_ if your platform does not support `AVX2` instruction set a
 
 `pip install lisbon`
 
+PyPI distributions cover: Windows/MacOS/Linux with Python 3.6/3.7/3.8/3.9/3.10
+
 ### Install from source
 
 - Make sure you have the Rust toolchain `rustc`, `cargo`, `rust-std` installed. The quickest way to do it is `curl https://sh.rustup.rs -sSf | sh -s`
